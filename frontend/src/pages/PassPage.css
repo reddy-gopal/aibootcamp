@@ -1,0 +1,101 @@
+.pass-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem;
+}
+
+.loading,
+.error,
+.registration-required {
+  text-align: center;
+  background: white;
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 100%;
+}
+
+.loading {
+  font-size: 1.2rem;
+  color: #667eea;
+}
+
+.error h2 {
+  color: #e74c3c;
+  margin-bottom: 1rem;
+}
+
+.error p {
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.error a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.error a:hover {
+  text-decoration: underline;
+}
+
+/* Registration Required Styles */
+.registration-required .error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.registration-required h1 {
+  font-size: 2rem;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.registration-required p {
+  color: #555;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.instruction {
+  font-size: 0.95rem;
+  color: #777 !important;
+}
+
+.register-btn {
+  background: linear-gradient(90deg, #6226c5, #2f80ed);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%;
+  max-width: 300px;
+}
+
+.register-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(98, 38, 197, 0.4);
+}
+
+.back-link {
+  color: #666;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-top: 10px;
+}
+
+.back-link:hover {
+  color: #1a1a2e;
+  text-decoration: underline;
+}
