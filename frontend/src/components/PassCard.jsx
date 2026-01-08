@@ -14,7 +14,6 @@ function PassCard({ student }) {
     const end = Date.now() + duration;
 
     const frame = () => {
-      // Confetti falling from the top
       confetti({
         particleCount: 4,
         angle: 270,
@@ -86,7 +85,7 @@ function PassCard({ student }) {
     try {
       // 1. Capture the pass card as a canvas
       const canvas = await html2canvas(passRef.current, {
-        scale: 4, // High resolution for stories
+        scale: 2,
         backgroundColor: null,
         useCORS: true,
         logging: false,
@@ -108,6 +107,7 @@ function PassCard({ student }) {
         files: [file],
         title: 'My AI BOOTCAMP Pass',
         text: 'I am attending the AI BOOTCAMP! Join me there.',
+        url: window.location.href,
       }
 
       if (navigator.canShare && navigator.canShare(shareData)) {
