@@ -238,11 +238,53 @@
   object-position: center;
   transform: scale(1.02);
   transition: transform 0.5s ease;
+  display: block;
 }
 
 .pass-card:hover .pass-visual {
   transform: scale(1.05);
   /* Subtle zoom on hover */
+}
+
+/* Image placeholder for loading state */
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.placeholder-content {
+  text-align: center;
+  color: white;
+  z-index: 1;
+}
+
+.ai-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.placeholder-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 /* LIVE PULSE INDICATOR inside the visual area */
