@@ -242,7 +242,7 @@ function PassCard({ student }) {
         {/* Right Side - Visual */}
         <div className="pass-right">
           <img 
-            src="/workshop-illustration.png" 
+            src="/image.png" 
             alt="AI BOOTCAMP Workshop" 
             className="pass-visual"
             crossOrigin="anonymous"
