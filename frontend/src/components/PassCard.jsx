@@ -54,7 +54,7 @@ function PassCard({ student }) {
       await new Promise(resolve => setTimeout(resolve, 100))
 
       const canvas = await html2canvas(passRef.current, {
-        scale: 4, // Higher scale for print quality
+        scale: 4, // High quality for print
         backgroundColor: null,
         useCORS: true,
         logging: false,
@@ -62,16 +62,18 @@ function PassCard({ student }) {
       })
 
       const imgData = canvas.toDataURL('image/png')
+
+      // Calculate dimensions to maintain aspect ratio
+      const imgWidth = 85.6 // Standard ID-1 width in mm
+      const pageHeight = (canvas.height * imgWidth) / canvas.width
+
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
-        format: [85.6, 54], // Standard ID card size
+        format: [imgWidth, pageHeight],
       })
 
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = pdf.internal.pageSize.getHeight()
-
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, pageHeight)
       pdf.save(`${studentName}-bootcamp-pass.pdf`)
     } catch (error) {
       console.error('Error generating PDF:', error)
@@ -105,9 +107,8 @@ function PassCard({ student }) {
       // 4. Check if the device supports file sharing
       const shareData = {
         files: [file],
-        title: 'My AI BOOTCAMP Pass',
-        text: 'I am attending the AI BOOTCAMP! Join me there.',
-        url: window.location.href,
+        title: 'AI BOOTCAMP Registration',
+        text: "Just secured my spot at the AI BOOTCAMP! 🚀 Ready to dive into the future of technology. Who's joining me? #AIBootcamp #AI #FutureReady",
       }
 
       if (navigator.canShare && navigator.canShare(shareData)) {
