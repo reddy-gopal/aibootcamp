@@ -1,11 +1,39 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
+import confetti from 'canvas-confetti'
 import passIllustration from '../assets/pass_illustration_v2.png'
 import './PassCard.css'
 
 function PassCard({ student }) {
   const passRef = useRef(null)
+
+  // Trigger confetti on load
+  useEffect(() => {
+    const duration = 2000;
+    const end = Date.now() + duration;
+
+    const frame = () => {
+      // Confetti falling from the top
+      confetti({
+        particleCount: 4,
+        angle: 270,
+        spread: 100,
+        origin: { x: Math.random(), y: -0.1 },
+        colors: ['#6366f1', '#a855f7', '#ec4899', '#22c55e'],
+        gravity: 1.2,
+        scalar: 1.0,
+        drift: 0,
+        ticks: 100
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+
+    frame();
+  }, []);
 
   // Convert slug to proper name (capitalize first letters)
   const slugToName = (slug) => {
@@ -100,11 +128,23 @@ function PassCard({ student }) {
 
   return (
     <div className="pass-container">
+
+      {/* Success Message Header */}
+      <div className="success-header">
+        <div className="success-icon">🎉</div>
+        <h1>Registration Successful!</h1>
+        <p>Thank you for registering for the AI BOOTCAMP.</p>
+      </div>
+
       <div className="pass-card" ref={passRef}>
 
         {/* Left Side - Details */}
         <div className="pass-left">
           <div className="pass-bg-pattern"></div>
+
+          <div className="branding-header">
+            <img src="/niat.png" alt="NIAT Logo" className="brand-logo" />
+          </div>
 
           <div className="header-group">
             <h1 className="main-title">AI BOOTCAMP</h1>
@@ -121,11 +161,7 @@ function PassCard({ student }) {
             </div>
           </div>
 
-          <div className="pass-footer-left">
-            <div className="id-chip">
-              <span>ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
-            </div>
-          </div>
+
         </div>
 
         {/* Right Side - Visual */}
