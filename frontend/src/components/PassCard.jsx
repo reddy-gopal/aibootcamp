@@ -52,19 +52,49 @@ function PassCard({ student }) {
     }
   }
 
-  const sharePass = () => {
-    const url = window.location.href
+  const sharePass = async () => {
+    if (!passRef.current) return
 
-    if (navigator.share) {
-      navigator.share({
-        title: `${studentName} - AI BOOTCAMP Pass`,
-        text: `I'm attending the AI BOOTCAMP! Check out my pass.`,
-        url: url,
-      }).catch(console.error)
-    } else {
+    try {
+      // 1. Capture the pass card as a canvas
+      const canvas = await html2canvas(passRef.current, {
+        scale: 4, // High resolution for stories
+        backgroundColor: null,
+        useCORS: true,
+        logging: false,
+        allowTaint: true
+      })
+
+      // 2. Convert canvas to Blob
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+      if (!blob) throw new Error('Failed to create image blob')
+
+      // 3. Create a File object
+      const file = new File([blob], 'my-bootcamp-pass.png', {
+        type: 'image/png',
+        lastModified: Date.now(),
+      })
+
+      // 4. Check if the device supports file sharing
+      const shareData = {
+        files: [file],
+        title: 'My AI BOOTCAMP Pass',
+        text: 'I am attending the AI BOOTCAMP! Join me there.',
+      }
+
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData)
+      } else {
+        // Fallback for desktop or unsupported browsers
+        throw new Error('Image sharing not supported on this device')
+      }
+    } catch (error) {
+      console.warn('Share failed, falling back to URL copy:', error)
+      // Gentle fallback: Just copy the URL if image sharing fails
+      const url = window.location.href
       navigator.clipboard.writeText(url)
-        .then(() => alert('Pass URL copied to clipboard!'))
-        .catch(() => alert('Failed to copy URL'))
+        .then(() => alert('Image sharing not supported using the browser. Pass URL copied to clipboard instead!'))
+        .catch(() => alert('Failed to share pass.'))
     }
   }
 
