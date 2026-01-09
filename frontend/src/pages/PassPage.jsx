@@ -1,63 +1,86 @@
 import { useParams, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import PassCard from '../components/PassCard'
-import { registeredUsers } from '../data/users'
 import './PassPage.css'
 
 function PassPage() {
-  const { studentSlug } = useParams()
+  const { studentId } = useParams()
   const [student, setStudent] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [notRegistered, setNotRegistered] = useState(false)
+  const [accessDenied, setAccessDenied] = useState(false)
 
   useEffect(() => {
-    // Simulate API delay
     setLoading(true)
+
     const timer = setTimeout(() => {
-      checkRegistration(studentSlug)
-      setLoading(false)
+      resolveStudentName()
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [studentSlug])
+  }, [studentId]) // Added studentId to dependency array to re-run if it changes
 
-  const checkRegistration = (slug) => {
-    // Check if the slug exists in our registered users list
-    const foundUser = registeredUsers.find(user => user.slug === slug)
+  const resolveStudentName = () => {
+    try {
+      // 1. Check LocalStorage first
+      const storedName = localStorage.getItem('studentPassName')
 
-    if (foundUser) {
-      setStudent({
-        ...foundUser,
-        workshop: 'Music Generation with AI Workshop',
-        date: '10th DECEMBER',
-        passUrl: window.location.href
-      })
-      setNotRegistered(false)
-    } else {
-      setStudent(null)
-      setNotRegistered(true)
+      let finalName = null
+
+      if (storedName) {
+        // Requirement: Always prefer localStorage if it exists (locks the name)
+        finalName = storedName
+      } else if (studentId) {
+        // Helper to format the name from the URL slug/ID
+        // Handles "rohit-sharma" -> "Rohit Sharma"
+        // Handles "Rohit%20Sharma" -> "Rohit Sharma"
+        const raw = decodeURIComponent(studentId)
+        const formatted = raw
+          .replace(/-/g, ' ') // Replace hyphens with spaces
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ')
+
+        finalName = formatted
+
+        // Save to storage for future visits
+        localStorage.setItem('studentPassName', finalName)
+      }
+
+      if (finalName) {
+        setStudent({
+          name: finalName,
+          workshop: 'Music Generation with AI',
+          date: '10th DECEMBER'
+        })
+        setAccessDenied(false)
+      } else {
+        setStudent(null)
+        setAccessDenied(true)
+      }
+    } catch (error) {
+      console.error("Error resolving pass name:", error)
+      setAccessDenied(true)
+    } finally {
+      setLoading(false)
     }
   }
 
   if (loading) {
     return (
       <div className="pass-page">
-        <div className="loading">Checking registration...</div>
+        <div className="loading">Generating Pass...</div>
       </div>
     )
   }
 
-  if (notRegistered) {
+  if (accessDenied) {
     return (
       <div className="pass-page">
         <div className="registration-required">
           <div className="error-card">
             <h1>Access Denied</h1>
-            <p>We couldn't find a registration for <strong>{studentSlug}</strong>.</p>
-            <p className="instruction">You must be registered for Music Generation with AI to view and download your pass.</p>
-            <button className="register-btn" onClick={() => window.location.href = 'https://www.niatindia.com/ai-bootcamp'}>
-              Register Now
-            </button>
+            <p>We couldn't generate your pass.</p>
+            <p className="instruction">Please ensure you have visited the correct link provided to you.</p>
             <Link to="/" className="back-link">Return to Home</Link>
           </div>
         </div>
