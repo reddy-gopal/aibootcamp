@@ -1,6 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
 import html2canvas from 'html2canvas'
-import jsPDF from 'jspdf'
 import confetti from 'canvas-confetti'
 import './PassCard.css'
 
@@ -70,10 +69,19 @@ function PassCard({ student }) {
 
   const studentName = student.name || slugToName(student.slug || '')
 
-  const downloadAsPDF = async () => {
+  /*
+     Previous 'downloadAsPDF' replaced with 'downloadPass' to download as PNG image
+     per user request ("it is not downloading the image").
+  */
+  /*
+     Updated 'downloadPass' to use Blob + ObjectURL for better mobile stability,
+     and strict CORS handling to avoid tainted canvas issues.
+  */
+  const downloadPass = async () => {
     if (!passRef.current) return
 
     try {
+      // Ensure all images are loaded
       const images = passRef.current.querySelectorAll('img')
       await Promise.all(
         Array.from(images).map(
@@ -89,16 +97,14 @@ function PassCard({ student }) {
                 const onError = () => {
                   img.removeEventListener('load', onLoad)
                   img.removeEventListener('error', onError)
+                  // If CORS fails, we can't really do much for html2canvas 
+                  // except let it render what it can or show blank.
                   console.warn('Image failed to load:', img.src)
                   resolve()
                 }
                 img.addEventListener('load', onLoad)
                 img.addEventListener('error', onError)
-                setTimeout(() => {
-                  img.removeEventListener('load', onLoad)
-                  img.removeEventListener('error', onError)
-                  resolve()
-                }, 10000)
+                setTimeout(() => resolve(), 8000) // Timeout safety
               }
             })
         )
@@ -106,37 +112,12 @@ function PassCard({ student }) {
 
       await new Promise((r) => setTimeout(r, 500))
 
-      const imageElements = Array.from(passRef.current.querySelectorAll('img'))
-      const originalSrcs = []
-
-      for (let i = 0; i < imageElements.length; i++) {
-        const img = imageElements[i]
-        try {
-          originalSrcs[i] = img.src
-
-          const imgCanvas = document.createElement('canvas')
-          const imgContext = imgCanvas.getContext('2d')
-          imgCanvas.width = img.naturalWidth || img.width || 1
-          imgCanvas.height = img.naturalHeight || img.height || 1
-
-          if (imgCanvas.width > 0 && imgCanvas.height > 0) {
-            imgContext.drawImage(img, 0, 0)
-            const dataUrl = imgCanvas.toDataURL('image/png')
-            img.src = dataUrl
-          }
-        } catch (e) {
-          console.warn('Could not convert image to data URL:', e)
-        }
-      }
-
-      await new Promise((r) => setTimeout(r, 300))
-
       const canvas = await html2canvas(passRef.current, {
         scale: 4,
         backgroundColor: '#ffffff',
-        useCORS: false,
+        useCORS: true,       // CRITICAL: Must be true for external images
+        allowTaint: false,   // CRITICAL: Must be false. If true, toBlob/toDataURL throws error.
         logging: false,
-        allowTaint: true,
         imageTimeout: 20000,
         removeContainer: false,
         onclone: (clonedDoc) => {
@@ -149,44 +130,51 @@ function PassCard({ student }) {
         },
       })
 
-      for (let i = 0; i < imageElements.length; i++) {
-        if (originalSrcs[i]) imageElements[i].src = originalSrcs[i]
-      }
+      // Use Blob API for download (more robust on mobile than long Data URLs)
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          alert('Failed to generate image.')
+          return
+        }
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${studentName}-ai-bootcamp-pass.png`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+      }, 'image/png', 1.0)
 
-      const imgData = canvas.toDataURL('image/png', 1.0)
-
-      const imgWidth = 85.6
-      const pageHeight = (canvas.height * imgWidth) / canvas.width
-
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: [imgWidth, pageHeight],
-      })
-
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, pageHeight)
-      pdf.save(`${studentName}-ai-bootcamp-pass.pdf`)
     } catch (error) {
-      console.error('Error generating PDF:', error)
-      alert('Failed to download PDF. Please try again.')
+      console.error('Error generating Pass Image:', error)
+      alert('Failed to download Pass. Please check your internet connection.')
     }
   }
 
-  // ✅ UPDATED: share image + caption together (when supported)
+  // ✅ UPDATED: share image + caption together
   const sharePass = async () => {
     if (!passRef.current) return
 
     const captions = [
-      `🎵 Just secured my spot at the AI BOOTCAMP! Ready to create music with AI and unlock the future of music production. Who's joining me on this incredible journey? 🚀 #AIBootcamp #AIMusic #MusicCreation #FutureOfMusic`,
-      `🎶 Excited to be part of the AI-Powered Music Creation Workshop! Can't wait to explore how artificial intelligence is revolutionizing music production. Let's make some magic! ✨ #AIBootcamp #MusicTech #Innovation`,
-      `🎼 Got my pass for the AI BOOTCAMP! Time to dive deep into AI-powered music creation and discover the endless possibilities. This is going to be epic! 🎹 #AIMusic #MusicGeneration #TechInnovation`,
-      `🎵 Thrilled to join the AI BOOTCAMP! Ready to learn how AI is transforming music creation and unleash my creativity with cutting-edge technology. Let's create something amazing together! 🚀 #AIBootcamp #MusicTech #CreativeAI`,
+      `🎵 Just secured my spot at the AI BOOTCAMP! Ready to create music with AI and unlock the future of music production. Who's joining me on this incredible journey? 🚀`,
+      `🎶 Excited to be part of the AI-Powered Music Creation Workshop! Can't wait to explore how artificial intelligence is revolutionizing music production. Let's make some magic! ✨`,
+      `🎼 Got my pass for the AI BOOTCAMP! Time to dive deep into AI-powered music creation and discover the endless possibilities. This is going to be epic! 🎹`,
+      `🎵 Thrilled to join the AI BOOTCAMP! Ready to learn how AI is transforming music creation and unleash my creativity with cutting-edge technology. Let's create something amazing together! 🚀`,
     ]
     const randomCaption = captions[Math.floor(Math.random() * captions.length)]
     const pageUrl = window.location.href
-    const fullCaption = `${randomCaption}\n\n${pageUrl}`
+    // Combine caption with hashtags underneath
+    const fullCaption = `${randomCaption}\n\nCheck it out here: ${pageUrl}\n\n#AIBootcamp #AIMusic #MusicCreation #FutureOfMusic #MusicTech`
 
     try {
+      // PROACTIVELY copy caption to clipboard in case share sheet drops it
+      try {
+        await navigator.clipboard.writeText(fullCaption)
+      } catch (err) {
+        // Ignore clipboard errors
+      }
+
       // Wait for images to load
       const images = passRef.current.querySelectorAll('img')
       await Promise.all(
@@ -211,8 +199,8 @@ function PassCard({ student }) {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
+        allowTaint: false, // Ensure valid export
         logging: false,
-        allowTaint: false,
         imageTimeout: 15000,
         onclone: (clonedDoc) => {
           const clonedImages = clonedDoc.querySelectorAll('img')
@@ -236,7 +224,6 @@ function PassCard({ student }) {
         lastModified: Date.now(),
       })
 
-      // ✅ Primary attempt: image + caption together
       const shareDataWithFile = {
         title: 'AI BOOTCAMP - AI-Powered Music Creation Workshop',
         text: fullCaption,
@@ -250,17 +237,13 @@ function PassCard({ student }) {
 
       if (canShareFiles) {
         await navigator.share(shareDataWithFile)
+        // Inform user that caption is copied (in case the app dropped it)
+        // alert('Caption copied to clipboard! You can paste it if it\'s not appearing.')
         return
       }
 
       // Fallback: copy caption + download image
-      try {
-        await navigator.clipboard.writeText(fullCaption)
-        alert('Caption copied to clipboard! Downloading pass image...')
-      } catch (e) {
-        console.warn('Clipboard write failed:', e)
-        alert('Downloading pass image...')
-      }
+      alert('Caption copied to clipboard! Downloading pass image...')
 
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -278,7 +261,7 @@ function PassCard({ student }) {
 
       try {
         await navigator.clipboard.writeText(fullCaption)
-        alert('Caption copied to clipboard!')
+        alert('Caption copied to clipboard! Share failed.')
       } catch {
         alert('Failed to share pass.')
       }
@@ -329,21 +312,9 @@ function PassCard({ student }) {
               setImageError(false)
             }}
             onError={(e) => {
-              console.warn('Image load error, retrying without crossOrigin')
-              const img = e.target
-
-              if (img.crossOrigin) {
-                img.removeAttribute('crossorigin')
-                img.crossOrigin = null
-                const currentSrc = img.src
-                img.src = ''
-                setTimeout(() => {
-                  img.src = currentSrc
-                }, 50)
-              } else {
-                setImageError(true)
-                setImageLoaded(true)
-              }
+              console.warn('Image load error:', e)
+              setImageError(true)
+              setImageLoaded(true)
             }}
             style={{
               display: imageLoaded && !imageError ? 'block' : 'none',
@@ -372,7 +343,7 @@ function PassCard({ student }) {
       </div>
 
       <div className="pass-actions">
-        <button onClick={downloadAsPDF} className="action-btn download">
+        <button onClick={downloadPass} className="action-btn download">
           <span className="icon">↓</span> Download Pass
         </button>
         <button onClick={sharePass} className="action-btn share">
