@@ -407,66 +407,138 @@
 }
 
 /* RESPONSIVE */
+/* RESPONSIVE: Maintain Landscape Layout on all devices */
 @media (max-width: 950px) {
+  .pass-container {
+    padding: 20px 10px;
+    /* Reduce container padding */
+  }
+
   .pass-card {
-    max-width: 600px;
+    width: 100%;
+    /* Max width is already controlled by container/parent, but ensure it fills */
     height: auto;
-    aspect-ratio: auto;
-    /* Remove fixed aspect ratio for stacked layout */
-    flex-direction: column;
+    aspect-ratio: 856/540;
+    /* Lock aspect ratio */
+    flex-direction: row;
+    /* Force Row Layout */
+    /* Adjust border radius for smaller size */
+    border-radius: 12px;
   }
 
+  /* Left Side Scaling */
   .pass-left {
-    flex: none;
-    width: 100%;
-    padding: 30px;
-    min-height: 300px;
+    flex: 4;
+    padding: 3% 4%;
+    /* Relative padding */
+    width: auto;
+    min-height: 0;
+    /* Allow shrinking */
   }
 
-  .pass-right::before {
-    display: none;
+  /* Pattern Scaling */
+  .pass-bg-pattern {
+    background-size: 16px 16px;
   }
 
+  /* Right Side Scaling */
   .pass-right {
-    flex: none;
-    width: 100%;
-    height: 300px;
+    flex: 5.5;
+    width: auto;
+    height: auto;
+    /* Follow container height */
+    display: block;
+  }
+
+  /* Typography & Element Scaling using Container Query-like approach (viewport units) */
+
+  .branding-header {
+    margin-bottom: 2%;
+    /* Relative margin */
+  }
+
+  .brand-logo {
+    height: 6vw;
+    max-height: 30px;
   }
 
   .main-title {
-    font-size: 2.5rem;
+    font-size: 3.5vw;
+    /* Scales with width */
+    letter-spacing: -0.05em;
+  }
+
+  .sub-header {
+    margin-top: 1.5%;
+    gap: 1vw;
+    font-size: 1.2vw;
+  }
+
+  .student-info {
+    margin-bottom: 4%;
+  }
+
+  .info-group {
+    gap: 0.5vw;
+  }
+
+  .label {
+    font-size: 1.2vw;
+    letter-spacing: 0.1em;
   }
 
   .student-name {
-    font-size: 2.2rem;
+    font-size: 3.2vw;
+    line-height: 1;
+  }
+
+  .id-chip {
+    padding: 0.5vw 1.5vw;
+    border-radius: 4px;
+  }
+
+  .id-chip span {
+    font-size: 1.2vw;
+    letter-spacing: 0.1em;
+  }
+
+  /* Footer Strip */
+  .pass-footer-strip {
+    padding: 1.5% 3%;
+  }
+
+  .pass-footer-strip span {
+    font-size: 1.2vw;
+  }
+
+  /* Buttons */
+  .pass-actions {
+    flex-direction: row;
+    /* Keep buttons row if possible, or wrap if needed */
+    width: 100%;
+    justify-content: center;
+    gap: 10px;
   }
 }
 
 @media (max-width: 480px) {
-  .pass-card {
-    border-radius: 15px;
-  }
 
-  .pass-left {
-    padding: 20px;
-  }
-
+  /* Fine-tuning for very small screens */
   .main-title {
-    font-size: 2rem;
+    font-size: 4vw;
   }
 
   .student-name {
-    font-size: 1.8rem;
-  }
-
-  .pass-actions {
-    flex-direction: column;
-    width: 100%;
+    font-size: 3.8vw;
   }
 
   .action-btn {
-    width: 100%;
-    justify-content: center;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+
+  .action-btn .icon {
+    font-size: 1rem;
   }
 }
 

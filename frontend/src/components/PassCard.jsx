@@ -159,18 +159,12 @@ function PassCard({ student }) {
   }
 
   /* 
-     UPDATED: Overlays caption on the right side of the card (over the image)
-     to keep the pass dimensions ("on the Pass") without obscuring student details on the left.
-  */
-  /* 
-     UPDATED: Embeds caption at the BOTTOM (Footer) of the image.
-     User Request: "caption to be embedded at the end".
-     Logic:
+     UPDATED: Embeds caption at the TOP of the image explicitly.
      1. Capture PassCard as canvas.
-     2. Create Composite Canvas (Pass Height + Footer Height).
-     3. Draw Pass at (0,0).
-     4. Draw dark footer at bottom.
-     5. Draw wrapped text in footer.
+     2. Create Composite Canvas (Pass Height + Header Height).
+     3. Fill White Background.
+     4. Draw Text at Top.
+     5. Draw Pass Image below Text.
   */
   const sharePass = async () => {
     if (!passRef.current) return
@@ -182,7 +176,6 @@ function PassCard({ student }) {
       `Joined the AI BOOTCAMP! Let's make some amazing music with AI! 🚀`,
     ]
     const randomCaption = captions[Math.floor(Math.random() * captions.length)]
-    // Removed hashtags and link, added direct CTA
     const fullCaption = `${randomCaption}\n\nIf anyone interested DM me.`
 
     try {
@@ -196,7 +189,7 @@ function PassCard({ student }) {
       await new Promise((r) => setTimeout(r, 100))
 
       // 1. Capture the pass card directly
-      const canvas = await html2canvas(passRef.current, {
+      const passCanvas = await html2canvas(passRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
@@ -213,7 +206,73 @@ function PassCard({ student }) {
         },
       })
 
-      // 2. Convert to Blob directly (No composite/text addition)
+      // 2. Create Composite Canvas (Pass + Caption Area)
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
+      // Text Settings
+      const headerPadding = 60
+      const fontSize = 32
+      const lineHeight = 44
+
+      // Calculate Text Height needed
+      ctx.font = `600 ${fontSize}px "Outfit", sans-serif`
+      const maxWidth = passCanvas.width - (headerPadding * 2)
+
+      // Helper to wrap text
+      const getWrappedLines = (text) => {
+        const paragraphs = text.split('\n')
+        let lines = []
+        paragraphs.forEach(paragraph => {
+          if (paragraph === '') {
+            lines.push('') // Empty line
+            return
+          }
+          const words = paragraph.split(' ')
+          let currentLine = ''
+          words.forEach((word, i) => {
+            const testLine = currentLine + word + ' '
+            const metrics = ctx.measureText(testLine)
+            if (metrics.width > maxWidth && i > 0) {
+              lines.push(currentLine)
+              currentLine = word + ' '
+            } else {
+              currentLine = testLine
+            }
+          })
+          lines.push(currentLine)
+        })
+        return lines
+      }
+
+      const lines = getWrappedLines(fullCaption)
+      const textBlockHeight = (lines.length * lineHeight) + (headerPadding * 2)
+
+      // Set Canvas Output Size
+      canvas.width = passCanvas.width
+      canvas.height = passCanvas.height + textBlockHeight
+
+      // Fill Background
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      // 1. Draw Pass Image (Top)
+      ctx.drawImage(passCanvas, 0, 0)
+
+      // 2. Draw Text (Bottom)
+      ctx.fillStyle = '#1a1a2e'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+
+      // Start Y = Pass Height + Padding + Half Font Size
+      let currentY = passCanvas.height + headerPadding + (fontSize / 2)
+
+      lines.forEach(line => {
+        ctx.fillText(line.trim(), canvas.width / 2, currentY)
+        currentY += lineHeight
+      })
+
+      // 3. Convert to Blob
       const blob = await new Promise((resolve) =>
         canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
       )
@@ -228,6 +287,7 @@ function PassCard({ student }) {
       })
 
       const shareData = {
+        title: 'AI BOOTCAMP Pass',
         text: fullCaption,
         files: [file],
       }
@@ -236,14 +296,28 @@ function PassCard({ student }) {
         await navigator.share(shareData)
         showToast('Shared successfully! 🚀')
       } else {
-        throw new Error('Web Share API not supported.')
+        // Fallback for desktop or unsupported browsers
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'ai-bootcamp-pass-shared.jpg'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        showToast('Image downloaded (Web Share not supported)')
       }
 
     } catch (error) {
       if (error?.name === 'AbortError') return
       console.warn('Share failed:', error)
-      showToast('Share failed. Downloading image...')
-      downloadPass()
+      showToast('Share failed. Copying text only...')
+      try {
+        await navigator.clipboard.writeText(fullCaption)
+        showToast('Caption copied to clipboard!')
+      } catch (e) {
+        showToast('Failed to share.')
+      }
     }
   }
 
@@ -267,7 +341,9 @@ function PassCard({ student }) {
           <div className="header-group">
             <h1 className="main-title">AI BOOTCAMP</h1>
             <div className="sub-header">
-              <span>AI-POWERED MUSIC CREATION WORKSHOP</span>
+              <span>PRODUCTIVE STUDY SYSTEM FOR BOARD EXAMS
+                &
+                AI-POWERED MUSIC CREATION</span>
             </div>
           </div>
 
@@ -317,7 +393,7 @@ function PassCard({ student }) {
           )}
 
           <div className="pass-footer-strip">
-            <span>PREMIUM WORKSHOP PASS</span>
+            <span>PREMIUM BOOTCAMP PASS</span>
           </div>
         </div>
       </div>
