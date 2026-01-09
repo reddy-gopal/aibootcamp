@@ -162,6 +162,16 @@ function PassCard({ student }) {
      UPDATED: Overlays caption on the right side of the card (over the image)
      to keep the pass dimensions ("on the Pass") without obscuring student details on the left.
   */
+  /* 
+     UPDATED: Embeds caption at the BOTTOM (Footer) of the image.
+     User Request: "caption to be embedded at the end".
+     Logic:
+     1. Capture PassCard as canvas.
+     2. Create Composite Canvas (Pass Height + Footer Height).
+     3. Draw Pass at (0,0).
+     4. Draw dark footer at bottom.
+     5. Draw wrapped text in footer.
+  */
   const sharePass = async () => {
     if (!passRef.current) return
 
@@ -173,7 +183,7 @@ function PassCard({ student }) {
     ]
     const randomCaption = captions[Math.floor(Math.random() * captions.length)]
     const pageUrl = window.location.href
-    const fullCaption = `${randomCaption}\n\nCheck: ${window.location.host}` // Shortened for overlay
+    const fullCaption = `${randomCaption}\n\nCheck it out here: ${pageUrl}\n\n#AIBootcamp #AIMusic #MusicCreation #FutureOfMusic #MusicTech`
 
     try {
       try {
@@ -186,7 +196,7 @@ function PassCard({ student }) {
       await new Promise((r) => setTimeout(r, 100))
 
       // 1. Capture the base pass card
-      const canvas = await html2canvas(passRef.current, {
+      const baseCanvas = await html2canvas(passRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
@@ -203,72 +213,73 @@ function PassCard({ student }) {
         },
       })
 
-      const ctx = canvas.getContext('2d')
+      // 2. Create Composite Canvas (Pass + Footer)
+      const footerPadding = 40
+      const fontSize = 24
+      const lineHeight = 36
+      const footerWidth = baseCanvas.width
 
-      // 2. Define Overlay Area (Right side - covers image, saves text on left)
-      // Left is approx 42% (flex 4 vs 5.5). Let's start at 42%.
-      const overlayX = canvas.width * 0.42
-      const overlayWidth = canvas.width - overlayX
-      const overlayHeight = canvas.height
-
-      // 3. Draw Dark Gradient Overlay on Right Side
-      const gradient = ctx.createLinearGradient(overlayX, 0, overlayX, canvas.height)
-      gradient.addColorStop(0, 'rgba(0,0,0,0.3)')
-      gradient.addColorStop(0.4, 'rgba(0,0,0,0.6)')
-      gradient.addColorStop(1, 'rgba(0,0,0,0.9)')
-
-      ctx.fillStyle = gradient
-      ctx.fillRect(overlayX, 0, overlayWidth, overlayHeight)
-
-      // 4. Draw Text
-      // Config
-      const padding = 40
-      const startX = overlayX + padding
-      const maxWidth = overlayWidth - (padding * 2)
-      const fontSize = 24 // px
-      const lineHeight = 34 // px
-
-      ctx.fillStyle = '#ffffff'
-      ctx.font = `500 ${fontSize}px 'Outfit', sans-serif`
-      ctx.textBaseline = 'bottom'
-      // Add shadow for better readability
-      ctx.shadowColor = 'rgba(0,0,0,0.8)'
-      ctx.shadowBlur = 4
-
-      // Word wrap logic (Bottom Up drawing)
-      const words = fullCaption.split(' ')
-      let lines = []
-      let line = ''
-
-      // First, break into lines
       const ctxTest = document.createElement('canvas').getContext('2d')
-      ctxTest.font = ctx.font
+      ctxTest.font = `600 ${fontSize}px 'Outfit', sans-serif`
+
+      const words = fullCaption.split(' ')
+      let line = ''
+      let lineCount = 1
+      const maxWidth = footerWidth - (footerPadding * 2)
 
       for (let n = 0; n < words.length; n++) {
         const testLine = line + words[n] + ' '
         const metrics = ctxTest.measureText(testLine)
-        const testWidth = metrics.width
-        if (testWidth > maxWidth && n > 0) {
-          lines.push(line)
+        if (metrics.width > maxWidth && n > 0) {
           line = words[n] + ' '
+          lineCount++
         } else {
           line = testLine
         }
       }
-      lines.push(line)
+      // Extra buffer
+      lineCount += 1
 
-      // Draw lines starting from bottom
-      let y = overlayHeight - padding - 20 // 20px bottom margin
+      const footerHeight = (lineCount * lineHeight) + (footerPadding * 2)
 
-      // Draw in reverse order (bottom-up) so we anchor to bottom
-      for (let i = lines.length - 1; i >= 0; i--) {
-        ctx.fillText(lines[i], startX, y)
-        y -= lineHeight
+      const compositeCanvas = document.createElement('canvas')
+      compositeCanvas.width = baseCanvas.width
+      compositeCanvas.height = baseCanvas.height + footerHeight
+
+      const ctx = compositeCanvas.getContext('2d')
+
+      // A. Draw Pass
+      ctx.drawImage(baseCanvas, 0, 0)
+
+      // B. Draw Footer
+      ctx.fillStyle = '#1a1a2e'
+      ctx.fillRect(0, baseCanvas.height, compositeCanvas.width, footerHeight)
+
+      // C. Draw Text
+      ctx.fillStyle = '#ffffff'
+      ctx.font = `600 ${fontSize}px 'Outfit', sans-serif`
+      ctx.textBaseline = 'top'
+
+      let x = footerPadding
+      let y = baseCanvas.height + footerPadding
+
+      line = ''
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' '
+        const metrics = ctx.measureText(testLine)
+        if (metrics.width > maxWidth && n > 0) {
+          ctx.fillText(line, x, y)
+          line = words[n] + ' '
+          y += lineHeight
+        } else {
+          line = testLine
+        }
       }
+      ctx.fillText(line, x, y)
 
-      // 5. Convert to Blob
+      // 3. Export
       const blob = await new Promise((resolve) =>
-        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
+        compositeCanvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
       )
 
       if (!blob || blob.size < 100) {
@@ -294,7 +305,6 @@ function PassCard({ student }) {
 
     } catch (error) {
       if (error?.name === 'AbortError') return
-
       console.warn('Share failed:', error)
       showToast('Share failed. Downloading image...')
       downloadPass()
