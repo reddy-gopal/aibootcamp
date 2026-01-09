@@ -3,44 +3,34 @@
 
 The sharing feature is designed to allow students to share their generated pass directly to social media (WhatsApp, Instagram, etc.) with a pre-filled caption.
 
-### 🚀 How It Works (Canvas Embedding)
+### 🚀 How It Works (Direct Sharing)
  
- The `sharePass` function now **embeds the caption directly into the image footer**, ensuring the message is always visible.
+ The `sharePass` function allows students to share their pass directly as an image.
  
- #### 1. Clipboard Copy (Backup)
- We copy the text to the clipboard and show a toast ("Processing image...") as a convenience backup.
+ #### 1. Clipboard Copy (Pre-fill)
+ We proactively copy the caption text to the clipboard so the user can easily paste it into their social media post if the app doesn't support automatic text population.
  
- #### 2. Base Pass Capture
- We use `html2canvas` to render the DOM element `.pass-card` into a base image.
+ #### 2. Image Capture
+ We use `html2canvas` to capture the `.pass-card` element exactly as it appears on screen.
  
- #### 3. Composite Generation
- - We calculate the text height required for the caption.
- - We create a new "Composite Canvas" = (Pass Height + Footer Height).
- - **Drawing**:
-   - **Top**: The Pass Card image.
-   - **Bottom (Footer)**: A dark background with the wrapped white text caption.
- 
- #### 4. Export & Share
- - The combined **Stack** (Pass + Footer) is exported as a high-quality JPEG.
- - This file is shared natively.
+ #### 3. Export & Share
+ - The captured canvas is converted to a JPEG blob.
+ - This image file is shared natively via the Web Share API (`navigator.share`).
  
  ```javascript
- /* Pseudocode */
- const baseCanvas = await html2canvas(passRef.current);
- const composite = document.createElement('canvas');
- composite.height = baseCanvas.height + footerHeight;
+ /* Simplified Logic */
+ // 1. Copy Text
+ navigator.clipboard.writeText(fullCaption);
  
- // Draw Pass
- ctx.drawImage(baseCanvas, 0, 0);
+ // 2. Capture Image
+ const canvas = await html2canvas(passRef.current);
  
- // Draw Footer
- ctx.fillStyle = '#1a1a2e';
- ctx.fillRect(0, baseCanvas.height, width, footerHeight);
- ctx.fillText(caption, x, baseCanvas.height + padding);
- 
- // Export
- composite.toBlob(...);
+ // 3. Share File
+ canvas.toBlob((blob) => {
+   const file = new File([blob], 'pass.jpg', { type: 'image/jpeg' });
+   navigator.share({ files: [file] });
+ });
  ```
  
- #### 5. Fallback
+ #### 4. Fallback
  If sharing fails, it falls back to a standard download.

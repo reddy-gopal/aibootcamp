@@ -195,8 +195,8 @@ function PassCard({ student }) {
 
       await new Promise((r) => setTimeout(r, 100))
 
-      // 1. Capture the base pass card
-      const baseCanvas = await html2canvas(passRef.current, {
+      // 1. Capture the pass card directly
+      const canvas = await html2canvas(passRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
@@ -213,74 +213,9 @@ function PassCard({ student }) {
         },
       })
 
-      // 2. Create Composite Canvas (Pass + Footer)
-      const footerPadding = 40
-      const fontSize = 24
-      const lineHeight = 36
-      const footerWidth = baseCanvas.width
-
-      const paragraphs = fullCaption.split('\n')
-      let lines = []
-
-      const ctxTest = document.createElement('canvas').getContext('2d')
-      ctxTest.font = `600 ${fontSize}px 'Outfit', sans-serif`
-
-      paragraphs.forEach(paragraph => {
-        const words = paragraph.split(' ')
-        let line = ''
-
-        // If paragraph is empty (double newline), add an empty line to maintain spacing
-        if (paragraph.trim() === '') {
-          lines.push('')
-          return
-        }
-
-        for (let n = 0; n < words.length; n++) {
-          const testLine = line + words[n] + ' '
-          const metrics = ctxTest.measureText(testLine)
-          if (metrics.width > maxWidth && n > 0) {
-            lines.push(line)
-            line = words[n] + ' '
-          } else {
-            line = testLine
-          }
-        }
-        lines.push(line)
-      })
-
-      const lineCount = lines.length
-      // Add a little padding top/bottom
-      const footerHeight = (lineCount * lineHeight) + (footerPadding * 2)
-
-      const compositeCanvas = document.createElement('canvas')
-      compositeCanvas.width = baseCanvas.width
-      compositeCanvas.height = baseCanvas.height + footerHeight
-
-      const ctx = compositeCanvas.getContext('2d')
-
-      // A. Draw Pass at TOP
-      ctx.drawImage(baseCanvas, 0, 0)
-
-      // B. Draw Footer Background at BOTTOM
-      ctx.fillStyle = '#1a1a2e' // Dark theme footer
-      ctx.fillRect(0, baseCanvas.height, compositeCanvas.width, footerHeight)
-
-      // C. Draw Text in Footer
-      ctx.fillStyle = '#ffffff' // White text
-      ctx.font = `600 ${fontSize}px 'Outfit', sans-serif`
-      ctx.textBaseline = 'top'
-
-      let x = footerPadding
-      let y = baseCanvas.height + footerPadding // Start below the pass
-
-      lines.forEach(lineText => {
-        ctx.fillText(lineText, x, y)
-        y += lineHeight
-      })
-
-      // 3. Export
+      // 2. Convert to Blob directly (No composite/text addition)
       const blob = await new Promise((resolve) =>
-        compositeCanvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
       )
 
       if (!blob || blob.size < 100) {
