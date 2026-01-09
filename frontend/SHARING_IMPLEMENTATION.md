@@ -5,7 +5,7 @@ The sharing feature is designed to allow students to share their generated pass 
 
 ### 🚀 How It Works (Canvas Embedding)
  
- The `sharePass` function now **embeds the caption above the image** (Header), creating a clean, social-media-style post layout.
+ The `sharePass` function now **embeds the caption directly into the image footer**, ensuring the message is always visible.
  
  #### 1. Clipboard Copy (Backup)
  We copy the text to the clipboard and show a toast ("Processing image...") as a convenience backup.
@@ -15,32 +15,28 @@ The sharing feature is designed to allow students to share their generated pass 
  
  #### 3. Composite Generation
  - We calculate the text height required for the caption.
- - We create a new "Composite Canvas" = (Pass Height + Header Height).
+ - We create a new "Composite Canvas" = (Pass Height + Footer Height).
  - **Drawing**:
-   - **Background**: Filled with white (Clean look, no dark box).
-   - **Header (Top)**: The caption text is drawn in black.
-   - **Body (Bottom)**: The Pass Card image is drawn below the text.
+   - **Top**: The Pass Card image.
+   - **Bottom (Footer)**: A dark background with the wrapped white text caption.
  
  #### 4. Export & Share
- - The combined **Stack** (Text + Pass) is exported as a high-quality JPEG.
+ - The combined **Stack** (Pass + Footer) is exported as a high-quality JPEG.
  - This file is shared natively.
  
  ```javascript
  /* Pseudocode */
  const baseCanvas = await html2canvas(passRef.current);
  const composite = document.createElement('canvas');
- composite.height = baseCanvas.height + headerHeight;
+ composite.height = baseCanvas.height + footerHeight;
  
- // Fill White
- ctx.fillStyle = '#ffffff';
- ctx.fillRect(0, 0, width, height);
+ // Draw Pass
+ ctx.drawImage(baseCanvas, 0, 0);
  
- // Draw Text at Top
- ctx.fillStyle = '#000000';
- ctx.fillText(caption, x, padding);
- 
- // Draw Pass Below
- ctx.drawImage(baseCanvas, 0, headerHeight);
+ // Draw Footer
+ ctx.fillStyle = '#1a1a2e';
+ ctx.fillRect(0, baseCanvas.height, width, footerHeight);
+ ctx.fillText(caption, x, baseCanvas.height + padding);
  
  // Export
  composite.toBlob(...);

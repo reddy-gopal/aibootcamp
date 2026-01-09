@@ -250,33 +250,33 @@ function PassCard({ student }) {
 
       const lineCount = lines.length
       // Add a little padding top/bottom
-      const headerHeight = (lineCount * lineHeight) + (footerPadding * 2)
+      const footerHeight = (lineCount * lineHeight) + (footerPadding * 2)
 
       const compositeCanvas = document.createElement('canvas')
       compositeCanvas.width = baseCanvas.width
-      compositeCanvas.height = baseCanvas.height + headerHeight
+      compositeCanvas.height = baseCanvas.height + footerHeight
 
       const ctx = compositeCanvas.getContext('2d')
 
-      // Fill Background White (User requested "no background colour", implying clean/white)
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, compositeCanvas.width, compositeCanvas.height)
+      // A. Draw Pass at TOP
+      ctx.drawImage(baseCanvas, 0, 0)
 
-      // A. Draw Text at TOP (Header)
-      ctx.fillStyle = '#000000' // Black text
+      // B. Draw Footer Background at BOTTOM
+      ctx.fillStyle = '#1a1a2e' // Dark theme footer
+      ctx.fillRect(0, baseCanvas.height, compositeCanvas.width, footerHeight)
+
+      // C. Draw Text in Footer
+      ctx.fillStyle = '#ffffff' // White text
       ctx.font = `600 ${fontSize}px 'Outfit', sans-serif`
       ctx.textBaseline = 'top'
 
       let x = footerPadding
-      let y = footerPadding // Start from top padding
+      let y = baseCanvas.height + footerPadding // Start below the pass
 
       lines.forEach(lineText => {
         ctx.fillText(lineText, x, y)
         y += lineHeight
       })
-
-      // B. Draw Pass BELOW Text
-      ctx.drawImage(baseCanvas, 0, headerHeight)
 
       // 3. Export
       const blob = await new Promise((resolve) =>
