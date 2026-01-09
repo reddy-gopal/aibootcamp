@@ -211,14 +211,15 @@ function PassCard({ student }) {
       const ctx = canvas.getContext('2d')
 
       // Text Settings
-      const headerPadding = 80
-      const fontSize = 36
-      const lineHeight = 54
+      const headerPadding = 30
+      const fontSize = 32
+      const lineHeight = 42
       const footerBgColor = '#121025'
       const textColor = '#ffffff'
 
       // Calculate Text Height needed
-      ctx.font = `bold ${fontSize}px "Roboto", sans-serif`
+      // Using a web-safe font that looks clean on mobile
+      ctx.font = `bold ${fontSize}px "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", "Lucida Sans", Arial, sans-serif`
       const maxWidth = passCanvas.width - (headerPadding * 2)
 
       // Helper to wrap text
@@ -227,8 +228,6 @@ function PassCard({ student }) {
         let lines = []
         paragraphs.forEach(paragraph => {
           if (paragraph === '') {
-            // Determine if we want to keep empty lines. 
-            // For better compact design, we might skip them or add smaller spacing.
             lines.push('')
             return
           }
@@ -249,16 +248,19 @@ function PassCard({ student }) {
         return lines
       }
 
-      const lines = getWrappedLines(fullCaption)
-      // Extra bottom padding
-      const textBlockHeight = (lines.length * lineHeight) + (headerPadding * 2)
+      // Reduced gap in caption
+      const fullCaptionCompact = `${randomCaption}\nInterested in joining? DM me!`
+
+      const lines = getWrappedLines(fullCaptionCompact)
+      // Tighter vertical padding
+      const textBlockHeight = (lines.length * lineHeight) + (headerPadding * 1.5)
 
       // Set Canvas Output Size
       canvas.width = passCanvas.width
       canvas.height = passCanvas.height + textBlockHeight
 
       // 1. Draw Pass Image (Top)
-      // Fill Top Background (Pass Area) - White safe zone
+      // Fill Top Background (Pass Area)
       ctx.fillStyle = '#ffffff'
       ctx.fillRect(0, 0, canvas.width, passCanvas.height)
       ctx.drawImage(passCanvas, 0, 0)
@@ -272,12 +274,14 @@ function PassCard({ student }) {
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
 
-      // Start Y = Pass Height + Padding + Half Font Size
-      let currentY = passCanvas.height + headerPadding + (fontSize / 2)
+      // Center text vertically in the footer area
+      const textStartY = passCanvas.height + (textBlockHeight - (lines.length * lineHeight)) / 2 + (lineHeight / 2)
+
+      let currentY = textStartY
 
       lines.forEach(line => {
         if (line === '') {
-          currentY += lineHeight / 2 // Smaller gap for empty lines
+          currentY += lineHeight * 0.5
         } else {
           ctx.fillText(line.trim(), canvas.width / 2, currentY)
           currentY += lineHeight
@@ -347,7 +351,7 @@ function PassCard({ student }) {
           <div className="pass-bg-pattern"></div>
 
           <div className="branding-header">
-            <img src="/niat.png" alt="NIAT Logo" className="brand-logo" />
+            <img src="https://res.cloudinary.com/ds3egsoa3/image/upload/v1767962824/niat_k85nue.png" alt="NIAT Logo" className="brand-logo" />
           </div>
 
           <div className="header-group">
