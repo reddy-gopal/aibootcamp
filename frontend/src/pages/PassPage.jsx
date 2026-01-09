@@ -28,7 +28,7 @@ function PassPage() {
     if (foundUser) {
       setStudent({
         ...foundUser,
-        workshop: 'AI BOOTCAMP Workshop',
+        workshop: 'Music Generation with AI Workshop',
         date: '10th DECEMBER',
         passUrl: window.location.href
       })
@@ -54,7 +54,7 @@ function PassPage() {
           <div className="error-card">
             <h1>Access Denied</h1>
             <p>We couldn't find a registration for <strong>{studentSlug}</strong>.</p>
-            <p className="instruction">You must be registered for the AI BOOTCAMP to view and download your pass.</p>
+            <p className="instruction">You must be registered for Music Generation with AI to view and download your pass.</p>
             <button className="register-btn" onClick={() => window.location.href = 'https://www.niatindia.com/ai-bootcamp'}>
               Register Now
             </button>

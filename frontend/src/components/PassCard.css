@@ -349,20 +349,7 @@
   text-transform: uppercase;
 }
 
-/* TRIANGULAR CUTOUT EFFECT */
-.pass-right::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -50px;
-  width: 100px;
-  height: 100%;
-  background: white;
-  /* Matches left side */
-  transform: skewX(-12deg);
-  z-index: 10;
-  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.05);
-}
+/* TRIANGULAR CUTOUT EFFECT - Removed to eliminate white line */
 
 /* ACTIONS */
 .pass-actions {

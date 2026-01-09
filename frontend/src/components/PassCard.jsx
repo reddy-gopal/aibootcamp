@@ -114,7 +114,7 @@ function PassCard({ student }) {
       })
 
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, pageHeight)
-      pdf.save(`${studentName}-bootcamp-pass.pdf`)
+      pdf.save(`${studentName}-melody-ai-pass.pdf`)
     } catch (error) {
       console.error('Error generating PDF:', error)
       alert('Failed to download PDF. Please try again.')
@@ -166,7 +166,7 @@ function PassCard({ student }) {
       if (!blob) throw new Error('Failed to create image blob')
 
       // 3. Create a File object
-      const file = new File([blob], `${studentName}-bootcamp-pass.png`, {
+      const file = new File([blob], `${studentName}-melody-ai-pass.png`, {
         type: 'image/png',
         lastModified: Date.now(),
       })
@@ -174,8 +174,8 @@ function PassCard({ student }) {
       // 4. Check if the device supports file sharing
       const shareData = {
         files: [file],
-        title: 'AI BOOTCAMP Registration',
-        text: "Just secured my spot at the AI BOOTCAMP! 🚀 Ready to dive into the future of technology. Who's joining me? #AIBootcamp #AI #FutureReady",
+        title: 'Music Generation with AI - Registration',
+        text: "Just secured my spot at the Music Generation with AI workshop! 🎵 Ready to create melodies with artificial intelligence. Who's joining me? #AIMusic #MusicGeneration #MelodyAI",
       }
 
       if (navigator.canShare && navigator.canShare(shareData)) {
@@ -185,7 +185,7 @@ function PassCard({ student }) {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `${studentName}-bootcamp-pass.png`
+        link.download = `${studentName}-melody-ai-pass.png`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
@@ -206,9 +206,9 @@ function PassCard({ student }) {
 
       {/* Success Message Header */}
       <div className="success-header">
-        <div className="success-icon">🎉</div>
+        <div className="success-icon">🎵</div>
         <h1>Registration Successful!</h1>
-        <p>Thank you for registering for the AI BOOTCAMP.</p>
+        <p>Thank you for registering for Music Generation with AI.</p>
       </div>
 
       <div className="pass-card" ref={passRef}>
@@ -222,9 +222,9 @@ function PassCard({ student }) {
           </div>
 
           <div className="header-group">
-            <h1 className="main-title">AI BOOTCAMP</h1>
+            <h1 className="main-title">MUSIC × AI</h1>
             <div className="sub-header">
-              <span>10th DECEMBER</span>
+              <span>MUSIC GENERATION WORKSHOP</span>
             </div>
           </div>
 
@@ -243,7 +243,7 @@ function PassCard({ student }) {
         <div className="pass-right">
           <img 
             src="/image.png" 
-            alt="AI BOOTCAMP Workshop" 
+            alt="Music Generation with AI Workshop" 
             className="pass-visual"
             crossOrigin="anonymous"
             onLoad={() => setImageLoaded(true)}
@@ -253,7 +253,7 @@ function PassCard({ student }) {
             <div className="image-placeholder">
               <div className="placeholder-content">
                 <div className="ai-icon">🤖</div>
-                <div className="placeholder-text">AI BOOTCAMP</div>
+                <div className="placeholder-text">MUSIC × AI</div>
               </div>
             </div>
           )}
