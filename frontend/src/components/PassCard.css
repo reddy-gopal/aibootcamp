@@ -434,6 +434,10 @@
     width: auto;
     min-height: 0;
     /* Allow shrinking */
+    justify-content: center;
+    /* Bring elements closer together */
+    gap: 8%;
+    /* Fixed percent gap instead of pushing to edges */
   }
 
   /* Pattern Scaling */
@@ -453,8 +457,8 @@
   /* Typography & Element Scaling using Container Query-like approach (viewport units) */
 
   .branding-header {
-    margin-bottom: 2%;
-    /* Relative margin */
+    margin-bottom: 5%;
+    /* Relative margin - increased to push logo up */
   }
 
   .brand-logo {
@@ -469,13 +473,16 @@
   }
 
   .sub-header {
-    margin-top: 1.5%;
+    margin-top: 4%;
+    /* Gap between title and subtitle */
     gap: 1vw;
     font-size: 1.2vw;
   }
 
   .student-info {
-    margin-bottom: 4%;
+    margin-bottom: 0;
+    margin-top: 0;
+    /* Stop pushing to bottom */
   }
 
   .info-group {

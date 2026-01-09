@@ -170,13 +170,13 @@ function PassCard({ student }) {
     if (!passRef.current) return
 
     const captions = [
-      `I just registered for the AI BOOTCAMP! 🎵 Ready to create music with AI. 🚀`,
-      `Going to the AI-Powered Music Creation Workshop! Can't wait! ✨`,
-      `Got my pass for the AI BOOTCAMP! Time to dive into music tech. 🎹`,
-      `Joined the AI BOOTCAMP! Let's make some amazing music with AI! 🚀`,
+      `Excited to master Productive Study Systems & AI Music Creation! 📚🎵`,
+      `Boosting my Board Prep & Making AI Music at the AI BOOTCAMP! 🚀✨`,
+      `Just registered! Ready for Smart Study Tactics & AI Music Magic. 🎹🤖`,
+      `Joining the AI BOOTCAMP for Board Exam Strategy & Music Tech! 🎧🧠`,
     ]
     const randomCaption = captions[Math.floor(Math.random() * captions.length)]
-    const fullCaption = `${randomCaption}\n\nIf anyone interested DM me.`
+    const fullCaption = `${randomCaption}\n\nInterested in joining? DM me!`
 
     try {
       try {
@@ -211,12 +211,14 @@ function PassCard({ student }) {
       const ctx = canvas.getContext('2d')
 
       // Text Settings
-      const headerPadding = 60
-      const fontSize = 32
-      const lineHeight = 44
+      const headerPadding = 80
+      const fontSize = 36
+      const lineHeight = 54
+      const footerBgColor = '#121025'
+      const textColor = '#ffffff'
 
       // Calculate Text Height needed
-      ctx.font = `600 ${fontSize}px "Outfit", sans-serif`
+      ctx.font = `bold ${fontSize}px "Roboto", sans-serif`
       const maxWidth = passCanvas.width - (headerPadding * 2)
 
       // Helper to wrap text
@@ -225,7 +227,9 @@ function PassCard({ student }) {
         let lines = []
         paragraphs.forEach(paragraph => {
           if (paragraph === '') {
-            lines.push('') // Empty line
+            // Determine if we want to keep empty lines. 
+            // For better compact design, we might skip them or add smaller spacing.
+            lines.push('')
             return
           }
           const words = paragraph.split(' ')
@@ -246,21 +250,25 @@ function PassCard({ student }) {
       }
 
       const lines = getWrappedLines(fullCaption)
+      // Extra bottom padding
       const textBlockHeight = (lines.length * lineHeight) + (headerPadding * 2)
 
       // Set Canvas Output Size
       canvas.width = passCanvas.width
       canvas.height = passCanvas.height + textBlockHeight
 
-      // Fill Background
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-
       // 1. Draw Pass Image (Top)
+      // Fill Top Background (Pass Area) - White safe zone
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, passCanvas.height)
       ctx.drawImage(passCanvas, 0, 0)
 
-      // 2. Draw Text (Bottom)
-      ctx.fillStyle = '#1a1a2e'
+      // 2. Draw Text Background (Bottom)
+      ctx.fillStyle = footerBgColor
+      ctx.fillRect(0, passCanvas.height, canvas.width, textBlockHeight)
+
+      // 3. Draw Text (Bottom)
+      ctx.fillStyle = textColor
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
 
@@ -268,8 +276,12 @@ function PassCard({ student }) {
       let currentY = passCanvas.height + headerPadding + (fontSize / 2)
 
       lines.forEach(line => {
-        ctx.fillText(line.trim(), canvas.width / 2, currentY)
-        currentY += lineHeight
+        if (line === '') {
+          currentY += lineHeight / 2 // Smaller gap for empty lines
+        } else {
+          ctx.fillText(line.trim(), canvas.width / 2, currentY)
+          currentY += lineHeight
+        }
       })
 
       // 3. Convert to Blob
