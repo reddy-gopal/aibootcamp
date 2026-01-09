@@ -11,7 +11,8 @@ function PassCard({ student }) {
   // Preload the image to ensure it's ready
   useEffect(() => {
     const img = new Image()
-    img.src = '/workshop-illustration.png'
+    img.src = 'https://res.cloudinary.com/ds3egsoa3/image/upload/v1767944535/Gemini_Generated_Image_cso36ucso36ucso3_1_zeejgw.png'
+    img.crossOrigin = 'anonymous'
     img.onload = () => setImageLoaded(true)
     img.onerror = () => {
       // Fallback if image doesn't exist
@@ -62,34 +63,82 @@ function PassCard({ student }) {
     if (!passRef.current) return
 
     try {
-      // Wait for all images to load before capturing
+      // Wait for all images to load properly
       const images = passRef.current.querySelectorAll('img')
       await Promise.all(
         Array.from(images).map(
           (img) =>
-            new Promise((resolve, reject) => {
-              if (img.complete) {
+            new Promise((resolve) => {
+              // Check if image is already loaded
+              if (img.complete && img.naturalHeight !== 0) {
                 resolve()
               } else {
-                img.onload = resolve
-                img.onerror = reject
-                // Timeout after 5 seconds
-                setTimeout(() => resolve(), 5000)
+                // Wait for image to load
+                const onLoad = () => {
+                  img.removeEventListener('load', onLoad)
+                  img.removeEventListener('error', onError)
+                  resolve()
+                }
+                const onError = () => {
+                  img.removeEventListener('load', onLoad)
+                  img.removeEventListener('error', onError)
+                  console.warn('Image failed to load:', img.src)
+                  resolve() // Continue even if image fails
+                }
+                img.addEventListener('load', onLoad)
+                img.addEventListener('error', onError)
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                  img.removeEventListener('load', onLoad)
+                  img.removeEventListener('error', onError)
+                  resolve()
+                }, 10000)
               }
             })
         )
       )
 
-      // Additional delay to ensure rendering
+      // Additional delay to ensure all rendering is complete
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Convert images to data URLs to avoid CORS issues with html2canvas
+      const imageElements = Array.from(passRef.current.querySelectorAll('img'))
+      const originalSrcs = []
+      
+      for (let i = 0; i < imageElements.length; i++) {
+        const img = imageElements[i]
+        try {
+          // Store original src
+          originalSrcs[i] = img.src
+          
+          // Create a canvas to convert image to data URL
+          const imgCanvas = document.createElement('canvas')
+          const imgContext = imgCanvas.getContext('2d')
+          imgCanvas.width = img.naturalWidth || img.width || 1
+          imgCanvas.height = img.naturalHeight || img.height || 1
+          
+          if (imgCanvas.width > 0 && imgCanvas.height > 0) {
+            imgContext.drawImage(img, 0, 0)
+            const dataUrl = imgCanvas.toDataURL('image/png')
+            // Temporarily replace src with data URL
+            img.src = dataUrl
+          }
+        } catch (e) {
+          console.warn('Could not convert image to data URL:', e)
+          // Keep original src if conversion fails
+        }
+      }
+
+      // Wait a bit after converting images
       await new Promise(resolve => setTimeout(resolve, 300))
 
       const canvas = await html2canvas(passRef.current, {
         scale: 4, // High quality for print
         backgroundColor: '#ffffff',
-        useCORS: true,
+        useCORS: false, // Not needed since we're using data URLs
         logging: false,
-        allowTaint: false,
-        imageTimeout: 15000,
+        allowTaint: true, // Allow taint since we're using data URLs
+        imageTimeout: 20000,
         removeContainer: false,
         onclone: (clonedDoc) => {
           // Ensure images are visible in cloned document
@@ -97,9 +146,17 @@ function PassCard({ student }) {
           clonedImages.forEach((img) => {
             img.style.display = 'block'
             img.style.visibility = 'visible'
+            img.style.opacity = '1'
           })
         }
       })
+
+      // Restore original image sources
+      for (let i = 0; i < imageElements.length; i++) {
+        if (originalSrcs[i]) {
+          imageElements[i].src = originalSrcs[i]
+        }
+      }
 
       const imgData = canvas.toDataURL('image/png', 1.0)
 
@@ -114,7 +171,7 @@ function PassCard({ student }) {
       })
 
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, pageHeight)
-      pdf.save(`${studentName}-melody-ai-pass.pdf`)
+      pdf.save(`${studentName}-ai-bootcamp-pass.pdf`)
     } catch (error) {
       console.error('Error generating PDF:', error)
       alert('Failed to download PDF. Please try again.')
@@ -166,16 +223,27 @@ function PassCard({ student }) {
       if (!blob) throw new Error('Failed to create image blob')
 
       // 3. Create a File object
-      const file = new File([blob], `${studentName}-melody-ai-pass.png`, {
+      const file = new File([blob], `${studentName}-ai-bootcamp-pass.png`, {
         type: 'image/png',
         lastModified: Date.now(),
       })
 
+      // 4. Generate engaging captions
+      const captions = [
+        `🎵 Just secured my spot at the AI BOOTCAMP! Ready to create music with AI and unlock the future of music production. Who's joining me on this incredible journey? 🚀 #AIBootcamp #AIMusic #MusicCreation #FutureOfMusic`,
+        `🎶 Excited to be part of the AI-Powered Music Creation Workshop! Can't wait to explore how artificial intelligence is revolutionizing music production. Let's make some magic! ✨ #AIBootcamp #MusicTech #Innovation`,
+        `🎼 Got my pass for the AI BOOTCAMP! Time to dive deep into AI-powered music creation and discover the endless possibilities. This is going to be epic! 🎹 #AIMusic #MusicGeneration #TechInnovation`,
+        `🎵 Thrilled to join the AI BOOTCAMP! Ready to learn how AI is transforming music creation and unleash my creativity with cutting-edge technology. Let's create something amazing together! 🚀 #AIBootcamp #MusicTech #CreativeAI`
+      ]
+      
+      // Select a random engaging caption
+      const randomCaption = captions[Math.floor(Math.random() * captions.length)]
+      
       // 4. Check if the device supports file sharing
       const shareData = {
         files: [file],
-        title: 'Music Generation with AI - Registration',
-        text: "Just secured my spot at the Music Generation with AI workshop! 🎵 Ready to create melodies with artificial intelligence. Who's joining me? #AIMusic #MusicGeneration #MelodyAI",
+        title: 'AI BOOTCAMP - AI-Powered Music Creation Workshop',
+        text: randomCaption,
       }
 
       if (navigator.canShare && navigator.canShare(shareData)) {
@@ -185,7 +253,7 @@ function PassCard({ student }) {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `${studentName}-melody-ai-pass.png`
+        link.download = `${studentName}-ai-bootcamp-pass.png`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
@@ -242,7 +310,7 @@ function PassCard({ student }) {
         {/* Right Side - Visual */}
         <div className="pass-right">
           <img 
-            src="/image.png" 
+            src="https://res.cloudinary.com/ds3egsoa3/image/upload/v1767944535/Gemini_Generated_Image_cso36ucso36ucso3_1_zeejgw.png" 
             alt="Music Generation with AI Workshop" 
             className="pass-visual"
             crossOrigin="anonymous"
