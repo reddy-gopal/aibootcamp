@@ -176,14 +176,14 @@ function PassCard({ student }) {
     if (!passRef.current) return
 
     const captions = [
-      `🎵 Just secured my spot at the AI BOOTCAMP! Ready to create music with AI and unlock the future of music production. Who's joining me on this incredible journey? 🚀`,
-      `🎶 Excited to be part of the AI-Powered Music Creation Workshop! Can't wait to explore how artificial intelligence is revolutionizing music production. Let's make some magic! ✨`,
-      `🎼 Got my pass for the AI BOOTCAMP! Time to dive deep into AI-powered music creation and discover the endless possibilities. This is going to be epic! 🎹`,
-      `🎵 Thrilled to join the AI BOOTCAMP! Ready to learn how AI is transforming music creation and unleash my creativity with cutting-edge technology. Let's create something amazing together! 🚀`,
+      `I just registered for the AI BOOTCAMP! 🎵 Ready to create music with AI. 🚀`,
+      `Going to the AI-Powered Music Creation Workshop! Can't wait! ✨`,
+      `Got my pass for the AI BOOTCAMP! Time to dive into music tech. 🎹`,
+      `Joined the AI BOOTCAMP! Let's make some amazing music with AI! 🚀`,
     ]
     const randomCaption = captions[Math.floor(Math.random() * captions.length)]
-    const pageUrl = window.location.href
-    const fullCaption = `${randomCaption}\n\nCheck it out here: ${pageUrl}\n\n#AIBootcamp #AIMusic #MusicCreation #FutureOfMusic #MusicTech`
+    // Removed hashtags and link, added direct CTA
+    const fullCaption = `${randomCaption}\n\nIf anyone interested DM me.`
 
     try {
       try {
@@ -219,63 +219,64 @@ function PassCard({ student }) {
       const lineHeight = 36
       const footerWidth = baseCanvas.width
 
+      const paragraphs = fullCaption.split('\n')
+      let lines = []
+
       const ctxTest = document.createElement('canvas').getContext('2d')
       ctxTest.font = `600 ${fontSize}px 'Outfit', sans-serif`
 
-      const words = fullCaption.split(' ')
-      let line = ''
-      let lineCount = 1
-      const maxWidth = footerWidth - (footerPadding * 2)
+      paragraphs.forEach(paragraph => {
+        const words = paragraph.split(' ')
+        let line = ''
 
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' '
-        const metrics = ctxTest.measureText(testLine)
-        if (metrics.width > maxWidth && n > 0) {
-          line = words[n] + ' '
-          lineCount++
-        } else {
-          line = testLine
+        // If paragraph is empty (double newline), add an empty line to maintain spacing
+        if (paragraph.trim() === '') {
+          lines.push('')
+          return
         }
-      }
-      // Extra buffer
-      lineCount += 1
 
-      const footerHeight = (lineCount * lineHeight) + (footerPadding * 2)
+        for (let n = 0; n < words.length; n++) {
+          const testLine = line + words[n] + ' '
+          const metrics = ctxTest.measureText(testLine)
+          if (metrics.width > maxWidth && n > 0) {
+            lines.push(line)
+            line = words[n] + ' '
+          } else {
+            line = testLine
+          }
+        }
+        lines.push(line)
+      })
+
+      const lineCount = lines.length
+      // Add a little padding top/bottom
+      const headerHeight = (lineCount * lineHeight) + (footerPadding * 2)
 
       const compositeCanvas = document.createElement('canvas')
       compositeCanvas.width = baseCanvas.width
-      compositeCanvas.height = baseCanvas.height + footerHeight
+      compositeCanvas.height = baseCanvas.height + headerHeight
 
       const ctx = compositeCanvas.getContext('2d')
 
-      // A. Draw Pass
-      ctx.drawImage(baseCanvas, 0, 0)
-
-      // B. Draw Footer
-      ctx.fillStyle = '#1a1a2e'
-      ctx.fillRect(0, baseCanvas.height, compositeCanvas.width, footerHeight)
-
-      // C. Draw Text
+      // Fill Background White (User requested "no background colour", implying clean/white)
       ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, compositeCanvas.width, compositeCanvas.height)
+
+      // A. Draw Text at TOP (Header)
+      ctx.fillStyle = '#000000' // Black text
       ctx.font = `600 ${fontSize}px 'Outfit', sans-serif`
       ctx.textBaseline = 'top'
 
       let x = footerPadding
-      let y = baseCanvas.height + footerPadding
+      let y = footerPadding // Start from top padding
 
-      line = ''
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' '
-        const metrics = ctx.measureText(testLine)
-        if (metrics.width > maxWidth && n > 0) {
-          ctx.fillText(line, x, y)
-          line = words[n] + ' '
-          y += lineHeight
-        } else {
-          line = testLine
-        }
-      }
-      ctx.fillText(line, x, y)
+      lines.forEach(lineText => {
+        ctx.fillText(lineText, x, y)
+        y += lineHeight
+      })
+
+      // B. Draw Pass BELOW Text
+      ctx.drawImage(baseCanvas, 0, headerHeight)
 
       // 3. Export
       const blob = await new Promise((resolve) =>
