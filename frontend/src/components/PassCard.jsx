@@ -208,7 +208,7 @@ function PassCard({ student }) {
       <div className="success-header">
         <div className="success-icon">🎵</div>
         <h1>Registration Successful!</h1>
-        <p>Thank you for registering for Music Generation with AI.</p>
+        <p>Thank you for registering for AI BOOTCAMP.</p>
       </div>
 
       <div className="pass-card" ref={passRef}>
@@ -222,9 +222,9 @@ function PassCard({ student }) {
           </div>
 
           <div className="header-group">
-            <h1 className="main-title">MUSIC × AI</h1>
+            <h1 className="main-title">AI BOOTCAMP</h1>
             <div className="sub-header">
-              <span>MUSIC GENERATION WORKSHOP</span>
+              <span>AI-POWERED MUSIC CREATION WORKSHOP</span>
             </div>
           </div>
 
@@ -253,7 +253,7 @@ function PassCard({ student }) {
             <div className="image-placeholder">
               <div className="placeholder-content">
                 <div className="ai-icon">🤖</div>
-                <div className="placeholder-text">MUSIC × AI</div>
+                <div className="placeholder-text">AI BOOTCAMP</div>
               </div>
             </div>
           )}
