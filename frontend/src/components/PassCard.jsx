@@ -7,6 +7,12 @@ function PassCard({ student }) {
   const passRef = useRef(null)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [toastMsg, setToastMsg] = useState('')
+
+  const showToast = (msg) => {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(''), 3500)
+  }
 
   useEffect(() => {
     const imageUrl =
@@ -113,7 +119,7 @@ function PassCard({ student }) {
       await new Promise((r) => setTimeout(r, 500))
 
       const canvas = await html2canvas(passRef.current, {
-        scale: 4,
+        scale: 2, // Reduced scale for manageable file size
         backgroundColor: '#ffffff',
         useCORS: true,       // CRITICAL: Must be true for external images
         allowTaint: false,   // CRITICAL: Must be false. If true, toBlob/toDataURL throws error.
@@ -152,7 +158,6 @@ function PassCard({ student }) {
     }
   }
 
-  // ✅ UPDATED: share image + caption together
   const sharePass = async () => {
     if (!passRef.current) return
 
@@ -164,42 +169,27 @@ function PassCard({ student }) {
     ]
     const randomCaption = captions[Math.floor(Math.random() * captions.length)]
     const pageUrl = window.location.href
-    // Combine caption with hashtags underneath
     const fullCaption = `${randomCaption}\n\nCheck it out here: ${pageUrl}\n\n#AIBootcamp #AIMusic #MusicCreation #FutureOfMusic #MusicTech`
 
     try {
-      // PROACTIVELY copy caption to clipboard in case share sheet drops it
+      // 1. Force copy caption to clipboard immediately and SHOW TOAST
       try {
         await navigator.clipboard.writeText(fullCaption)
+        showToast('Caption copied! Paste it if it\'s missing 📋')
       } catch (err) {
-        // Ignore clipboard errors
+        console.warn('Clipboard write failed:', err)
       }
 
-      // Wait for images to load
-      const images = passRef.current.querySelectorAll('img')
-      await Promise.all(
-        Array.from(images).map(
-          (img) =>
-            new Promise((resolve) => {
-              if (img.complete && img.naturalHeight !== 0) resolve()
-              else {
-                const done = () => resolve()
-                img.addEventListener('load', done, { once: true })
-                img.addEventListener('error', done, { once: true })
-                setTimeout(resolve, 8000)
-              }
-            })
-        )
-      )
+      // 2. Wait for images to render
+      // Small delay to ensure styles are settled
+      await new Promise((r) => setTimeout(r, 100))
 
-      await new Promise((r) => setTimeout(r, 250))
-
-      // Capture the pass as a canvas
+      // 3. Capture image
       const canvas = await html2canvas(passRef.current, {
-        scale: 2,
+        scale: 2, // Moderate scale for mobile performance
         backgroundColor: '#ffffff',
         useCORS: true,
-        allowTaint: false, // Ensure valid export
+        allowTaint: false,
         logging: false,
         imageTimeout: 15000,
         onclone: (clonedDoc) => {
@@ -212,64 +202,48 @@ function PassCard({ student }) {
         },
       })
 
-      // Convert canvas to Blob
+      // 4. Convert to Blob (JPEG for better compatibility)
       const blob = await new Promise((resolve) =>
-        canvas.toBlob((b) => resolve(b), 'image/png', 1.0)
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
       )
-      if (!blob) throw new Error('Failed to create image blob')
 
-      // Create file
-      const file = new File([blob], `${studentName}-ai-bootcamp-pass.png`, {
-        type: 'image/png',
+      if (!blob || blob.size < 100) {
+        throw new Error('Generated image is empty or invalid.')
+      }
+
+      // 5. Create File
+      const file = new File([blob], 'ai-bootcamp-pass.jpg', {
+        type: 'image/jpeg',
         lastModified: Date.now(),
       })
 
-      const shareDataWithFile = {
-        title: 'AI BOOTCAMP - AI-Powered Music Creation Workshop',
+      const shareData = {
         text: fullCaption,
         files: [file],
       }
 
-      // Some browsers throw if canShare is missing; guard it
-      const canShareFiles =
-        !!navigator.share &&
-        (!navigator.canShare || navigator.canShare(shareDataWithFile))
-
-      if (canShareFiles) {
-        await navigator.share(shareDataWithFile)
-        // Inform user that caption is copied (in case the app dropped it)
-        // alert('Caption copied to clipboard! You can paste it if it\'s not appearing.')
-        return
+      // 6. Share
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData)
+        // Note: We don't alert here because the OS share sheet will open.
+        // The text is already in the clipboard as a backup.
+      } else {
+        throw new Error('Web Share API not supported or cannot share files.')
       }
-
-      // Fallback: copy caption + download image
-      alert('Caption copied to clipboard! Downloading pass image...')
-
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${studentName}-ai-bootcamp-pass.png`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
     } catch (error) {
-      // If user cancels share, don't show scary alerts
       if (error?.name === 'AbortError') return
 
-      console.warn('Share failed, falling back to URL copy:', error)
-
-      try {
-        await navigator.clipboard.writeText(fullCaption)
-        alert('Caption copied to clipboard! Share failed.')
-      } catch {
-        alert('Failed to share pass.')
-      }
+      console.warn('Share failed:', error)
+      console.warn('Share failed:', error)
+      showToast('Share menu failed. Downloading image instead.')
+      // Fallback: Trigger download so they at least get the image
+      downloadPass()
     }
   }
 
   return (
     <div className="pass-container">
+      {toastMsg && <div className="toast-notification">{toastMsg}</div>}
       <div className="success-header">
         <div className="success-icon">🎵</div>
         <h1>Registration Successful!</h1>

@@ -81,9 +81,12 @@
 
 /* PREMIUM CARD STYLES */
 .pass-card {
-  width: 856px;
+  width: 100%;
+  max-width: 856px;
   /* ID sized */
-  height: 540px;
+  height: auto;
+  aspect-ratio: 856/540;
+  /* Maintain aspect ratio */
   background: white;
   border-radius: 24px;
   display: flex;
@@ -96,6 +99,8 @@
   overflow: hidden;
   font-family: 'Outfit', sans-serif;
   border: 1px solid rgba(255, 255, 255, 0.5);
+  /* Ensure it doesn't touch edges on small screens */
+  margin: 0 auto;
 }
 
 /* LEFT SIDE */
@@ -279,9 +284,12 @@
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -401,9 +409,10 @@
 /* RESPONSIVE */
 @media (max-width: 950px) {
   .pass-card {
-    width: 100%;
     max-width: 600px;
     height: auto;
+    aspect-ratio: auto;
+    /* Remove fixed aspect ratio for stacked layout */
     flex-direction: column;
   }
 
@@ -458,5 +467,37 @@
   .action-btn {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* Toast Notification */
+.toast-notification {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  z-index: 1000;
+  animation: slideUpFade 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
   }
 }
