@@ -159,14 +159,8 @@ function PassCard({ student }) {
   }
 
   /* 
-     UPDATED: Embeds caption directly into the image for persistent visibility.
-     Logic:
-     1. Capture PassCard as canvas (html2canvas).
-     2. Create a new "Composite Canvas" with extra height for the footer.
-     3. Draw the PassCard image onto the Composite Canvas.
-     4. Draw a dark footer background.
-     5. Draw wrapped text (caption) onto the footer.
-     6. Export Composite Canvas as JPEG and Share.
+     UPDATED: Overlays caption on the right side of the card (over the image)
+     to keep the pass dimensions ("on the Pass") without obscuring student details on the left.
   */
   const sharePass = async () => {
     if (!passRef.current) return
@@ -179,10 +173,9 @@ function PassCard({ student }) {
     ]
     const randomCaption = captions[Math.floor(Math.random() * captions.length)]
     const pageUrl = window.location.href
-    const fullCaption = `${randomCaption}\n\nCheck it out here: ${pageUrl}\n\n#AIBootcamp #AIMusic #MusicCreation #FutureOfMusic #MusicTech`
+    const fullCaption = `${randomCaption}\n\nCheck: ${window.location.host}` // Shortened for overlay
 
     try {
-      // 1. Force copy caption to clipboard (still useful as backup)
       try {
         await navigator.clipboard.writeText(fullCaption)
         showToast('Processing image... ⏳')
@@ -192,8 +185,8 @@ function PassCard({ student }) {
 
       await new Promise((r) => setTimeout(r, 100))
 
-      // 2. Capture the base pass card
-      const baseCanvas = await html2canvas(passRef.current, {
+      // 1. Capture the base pass card
+      const canvas = await html2canvas(passRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
@@ -210,100 +203,85 @@ function PassCard({ student }) {
         },
       })
 
-      // 3. Create Composite Canvas (Pass + Text Footer)
-      const footerPadding = 40
+      const ctx = canvas.getContext('2d')
+
+      // 2. Define Overlay Area (Right side - covers image, saves text on left)
+      // Left is approx 42% (flex 4 vs 5.5). Let's start at 42%.
+      const overlayX = canvas.width * 0.42
+      const overlayWidth = canvas.width - overlayX
+      const overlayHeight = canvas.height
+
+      // 3. Draw Dark Gradient Overlay on Right Side
+      const gradient = ctx.createLinearGradient(overlayX, 0, overlayX, canvas.height)
+      gradient.addColorStop(0, 'rgba(0,0,0,0.3)')
+      gradient.addColorStop(0.4, 'rgba(0,0,0,0.6)')
+      gradient.addColorStop(1, 'rgba(0,0,0,0.9)')
+
+      ctx.fillStyle = gradient
+      ctx.fillRect(overlayX, 0, overlayWidth, overlayHeight)
+
+      // 4. Draw Text
+      // Config
+      const padding = 40
+      const startX = overlayX + padding
+      const maxWidth = overlayWidth - (padding * 2)
       const fontSize = 24 // px
-      const lineHeight = 36 // px
-      const footerWidth = baseCanvas.width
+      const lineHeight = 34 // px
 
-      // Calculate needed height for text
-      const ctxTest = document.createElement('canvas').getContext('2d')
-      ctxTest.font = `600 ${fontSize}px 'Outfit', sans-serif`
+      ctx.fillStyle = '#ffffff'
+      ctx.font = `500 ${fontSize}px 'Outfit', sans-serif`
+      ctx.textBaseline = 'bottom'
+      // Add shadow for better readability
+      ctx.shadowColor = 'rgba(0,0,0,0.8)'
+      ctx.shadowBlur = 4
 
-      // Word wrap logic to estimate height
-      const words = randomCaption.split(' ')
+      // Word wrap logic (Bottom Up drawing)
+      const words = fullCaption.split(' ')
+      let lines = []
       let line = ''
-      let lineCount = 1
-      const maxWidth = footerWidth - (footerPadding * 2)
+
+      // First, break into lines
+      const ctxTest = document.createElement('canvas').getContext('2d')
+      ctxTest.font = ctx.font
 
       for (let n = 0; n < words.length; n++) {
         const testLine = line + words[n] + ' '
         const metrics = ctxTest.measureText(testLine)
         const testWidth = metrics.width
         if (testWidth > maxWidth && n > 0) {
+          lines.push(line)
           line = words[n] + ' '
-          lineCount++
         } else {
           line = testLine
         }
       }
+      lines.push(line)
 
-      // Extra space for "#Hashtags" and URL if needed, or just keep it simple with the caption
-      // Let's add a bit more space for the "Check it out" line
-      lineCount += 2
+      // Draw lines starting from bottom
+      let y = overlayHeight - padding - 20 // 20px bottom margin
 
-      const footerHeight = (lineCount * lineHeight) + (footerPadding * 2)
-
-      const compositeCanvas = document.createElement('canvas')
-      compositeCanvas.width = baseCanvas.width
-      compositeCanvas.height = baseCanvas.height + footerHeight
-
-      const ctx = compositeCanvas.getContext('2d')
-
-      // A. Draw Pass
-      ctx.drawImage(baseCanvas, 0, 0)
-
-      // B. Draw Footer Background
-      ctx.fillStyle = '#1a1a2e' // Dark background matching theme
-      ctx.fillRect(0, baseCanvas.height, compositeCanvas.width, footerHeight)
-
-      // C. Draw Text
-      ctx.fillStyle = '#ffffff'
-      ctx.font = `600 ${fontSize}px 'Outfit', sans-serif`
-      ctx.textBaseline = 'top'
-
-      let x = footerPadding
-      let y = baseCanvas.height + footerPadding
-
-      // Draw Caption Line by Line
-      line = ''
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' '
-        const metrics = ctx.measureText(testLine)
-        const testWidth = metrics.width
-        if (testWidth > maxWidth && n > 0) {
-          ctx.fillText(line, x, y)
-          line = words[n] + ' '
-          y += lineHeight
-        } else {
-          line = testLine
-        }
+      // Draw in reverse order (bottom-up) so we anchor to bottom
+      for (let i = lines.length - 1; i >= 0; i--) {
+        ctx.fillText(lines[i], startX, y)
+        y -= lineHeight
       }
-      ctx.fillText(line, x, y) // Draw last line
 
-      // Draw URL/Hashtag stub below
-      y += lineHeight * 1.5
-      ctx.fillStyle = '#3b82f6' // Blue accent
-      ctx.font = `600 ${fontSize - 4}px 'Outfit', sans-serif`
-      ctx.fillText(`Join at: ${window.location.host}`, x, y)
-
-      // 4. Convert Composite to Blob
+      // 5. Convert to Blob
       const blob = await new Promise((resolve) =>
-        compositeCanvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
       )
 
       if (!blob || blob.size < 100) {
         throw new Error('Generated image is empty or invalid.')
       }
 
-      // 5. Share
       const file = new File([blob], 'ai-bootcamp-pass.jpg', {
         type: 'image/jpeg',
         lastModified: Date.now(),
       })
 
       const shareData = {
-        text: fullCaption, // Still provide text for apps that support it
+        text: fullCaption,
         files: [file],
       }
 
@@ -319,8 +297,6 @@ function PassCard({ student }) {
 
       console.warn('Share failed:', error)
       showToast('Share failed. Downloading image...')
-
-      // Fallback download if sharing fails
       downloadPass()
     }
   }
