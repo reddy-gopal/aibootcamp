@@ -259,8 +259,7 @@ function PassCard({ student }) {
       canvas.width = passCanvas.width
       canvas.height = passCanvas.height + textBlockHeight
 
-      // 1. Draw Pass Image (Top)
-      // Fill Top Background (Pass Area)
+
       ctx.fillStyle = '#ffffff'
       ctx.fillRect(0, 0, canvas.width, passCanvas.height)
       ctx.drawImage(passCanvas, 0, 0)
@@ -357,9 +356,9 @@ function PassCard({ student }) {
           <div className="header-group">
             <h1 className="main-title">AI BOOTCAMP</h1>
             <div className="sub-header">
-              <span>PRODUCTIVE STUDY SYSTEM FOR BOARD EXAMS
+              <span>Smart Exam Strategy System for Board Exams 
                 &
-                AI-POWERED MUSIC CREATION</span>
+              AI-Powered PPT Creation</span>
             </div>
           </div>
 
@@ -373,7 +372,7 @@ function PassCard({ student }) {
 
         <div className="pass-right">
           <img
-            src="https://res.cloudinary.com/ds3egsoa3/image/upload/f_auto,q_auto/v1767944535/Gemini_Generated_Image_cso36ucso36ucso3_1_zeejgw.png"
+            src="https://res.cloudinary.com/ds3egsoa3/image/upload/c_fill,w_992,h_1080/v1770274903/ChatGPT_Image_Feb_5_2026_12_30_24_PM_tduzwj.png"
             alt="Music Generation with AI Workshop"
             className="pass-visual"
             crossOrigin="anonymous"
@@ -390,10 +389,10 @@ function PassCard({ student }) {
             }}
             style={{
               display: imageLoaded && !imageError ? 'block' : 'none',
-              maxWidth: '100%',
-              height: '100%',
               width: '100%',
+              height: '100%',
               objectFit: 'cover',
+              objectPosition: 'center',
               opacity: imageLoaded ? 1 : 0,
               transition: 'opacity 0.3s ease-in',
             }}
