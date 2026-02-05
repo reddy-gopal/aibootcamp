@@ -340,7 +340,11 @@ function PassCard({ student }) {
     <div className="pass-container">
       {toastMsg && <div className="toast-notification">{toastMsg}</div>}
       <div className="success-header">
-        <div className="success-icon">🎵</div>
+        <img
+          src="https://res.cloudinary.com/ds3egsoa3/image/upload/v1770277311/microsoft-powerpoint-file_3653111_zgfapr.png"
+          alt="PPT"
+          className="success-icon"
+        />
         <h1>Registration Successful!</h1>
         <p>Thank you for registering for AI BOOTCAMP.</p>
       </div>

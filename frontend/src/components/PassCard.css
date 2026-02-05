@@ -16,7 +16,9 @@
 }
 
 .success-icon {
-  font-size: 3rem;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
   margin-bottom: 15px;
   animation: bounce 2s infinite;
 }
