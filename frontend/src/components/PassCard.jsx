@@ -158,14 +158,6 @@ function PassCard({ student }) {
     }
   }
 
-  /* 
-     UPDATED: Embeds caption at the TOP of the image explicitly.
-     1. Capture PassCard as canvas.
-     2. Create Composite Canvas (Pass Height + Header Height).
-     3. Fill White Background.
-     4. Draw Text at Top.
-     5. Draw Pass Image below Text.
-  */
   const sharePass = async () => {
     if (!passRef.current) return
 
@@ -179,16 +171,24 @@ function PassCard({ student }) {
     const fullCaption = `${randomCaption}\n\nInterested in joining? DM me!`
 
     try {
-      try {
-        await navigator.clipboard.writeText(fullCaption)
-        showToast('Processing image... ⏳')
-      } catch (err) {
-        console.warn('Clipboard write failed:', err)
-      }
-
+      showToast('Processing image... ⏳')
       await new Promise((r) => setTimeout(r, 100))
 
-      // 1. Capture the pass card directly
+      const images = passRef.current.querySelectorAll('img')
+      await Promise.all(
+        Array.from(images).map(
+          (img) =>
+            new Promise((resolve) => {
+              if (img.complete && img.naturalHeight !== 0) resolve()
+              else {
+                img.onload = () => resolve()
+                img.onerror = () => resolve()
+                setTimeout(() => resolve(), 5000)
+              }
+            })
+        )
+      )
+
       const passCanvas = await html2canvas(passRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
@@ -206,98 +206,16 @@ function PassCard({ student }) {
         },
       })
 
-      // 2. Create Composite Canvas (Pass + Caption Area)
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-
-      // Text Settings
-      const headerPadding = 30
-      const fontSize = 32
-      const lineHeight = 42
-      const footerBgColor = '#121025'
-      const textColor = '#ffffff'
-
-      // Calculate Text Height needed
-      // Using a web-safe font that looks clean on mobile
-      ctx.font = `bold ${fontSize}px "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", "Lucida Sans", Arial, sans-serif`
-      const maxWidth = passCanvas.width - (headerPadding * 2)
-
-      // Helper to wrap text
-      const getWrappedLines = (text) => {
-        const paragraphs = text.split('\n')
-        let lines = []
-        paragraphs.forEach(paragraph => {
-          if (paragraph === '') {
-            lines.push('')
-            return
-          }
-          const words = paragraph.split(' ')
-          let currentLine = ''
-          words.forEach((word, i) => {
-            const testLine = currentLine + word + ' '
-            const metrics = ctx.measureText(testLine)
-            if (metrics.width > maxWidth && i > 0) {
-              lines.push(currentLine)
-              currentLine = word + ' '
-            } else {
-              currentLine = testLine
-            }
-          })
-          lines.push(currentLine)
-        })
-        return lines
-      }
-
-      // Reduced gap in caption
-      const fullCaptionCompact = `${randomCaption}\nInterested in joining? DM me!`
-
-      const lines = getWrappedLines(fullCaptionCompact)
-      // Tighter vertical padding
-      const textBlockHeight = (lines.length * lineHeight) + (headerPadding * 1.5)
-
-      // Set Canvas Output Size
-      canvas.width = passCanvas.width
-      canvas.height = passCanvas.height + textBlockHeight
-
-
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, canvas.width, passCanvas.height)
-      ctx.drawImage(passCanvas, 0, 0)
-
-      // 2. Draw Text Background (Bottom)
-      ctx.fillStyle = footerBgColor
-      ctx.fillRect(0, passCanvas.height, canvas.width, textBlockHeight)
-
-      // 3. Draw Text (Bottom)
-      ctx.fillStyle = textColor
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-
-      // Center text vertically in the footer area
-      const textStartY = passCanvas.height + (textBlockHeight - (lines.length * lineHeight)) / 2 + (lineHeight / 2)
-
-      let currentY = textStartY
-
-      lines.forEach(line => {
-        if (line === '') {
-          currentY += lineHeight * 0.5
-        } else {
-          ctx.fillText(line.trim(), canvas.width / 2, currentY)
-          currentY += lineHeight
-        }
-      })
-
-      // 3. Convert to Blob
       const blob = await new Promise((resolve) =>
-        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
+        passCanvas.toBlob((b) => resolve(b), 'image/png', 1.0)
       )
 
       if (!blob || blob.size < 100) {
         throw new Error('Generated image is empty or invalid.')
       }
 
-      const file = new File([blob], 'ai-bootcamp-pass.jpg', {
-        type: 'image/jpeg',
+      const file = new File([blob], 'ai-bootcamp-pass.png', {
+        type: 'image/png',
         lastModified: Date.now(),
       })
 
@@ -311,22 +229,20 @@ function PassCard({ student }) {
         await navigator.share(shareData)
         showToast('Shared successfully! 🚀')
       } else {
-        // Fallback for desktop or unsupported browsers
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = 'ai-bootcamp-pass-shared.jpg'
+        link.download = 'ai-bootcamp-pass.png'
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
         URL.revokeObjectURL(url)
-        showToast('Image downloaded (Web Share not supported)')
+        showToast('Image downloaded')
       }
-
     } catch (error) {
       if (error?.name === 'AbortError') return
       console.warn('Share failed:', error)
-      showToast('Share failed. Copying text only...')
+      showToast('Share failed. Copying caption...')
       try {
         await navigator.clipboard.writeText(fullCaption)
         showToast('Caption copied to clipboard!')
@@ -340,11 +256,7 @@ function PassCard({ student }) {
     <div className="pass-container">
       {toastMsg && <div className="toast-notification">{toastMsg}</div>}
       <div className="success-header">
-        <img
-          src="https://res.cloudinary.com/ds3egsoa3/image/upload/v1770277311/microsoft-powerpoint-file_3653111_zgfapr.png"
-          alt="PPT"
-          className="success-icon"
-        />
+        <div className="success-icon"> 🎉 </div>
         <h1>Registration Successful!</h1>
         <p>Thank you for registering for AI BOOTCAMP.</p>
       </div>
